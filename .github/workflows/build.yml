@@ -1,4 +1,4 @@
-name: Build ESP32-C3 Mochi Firmware
+name: Build ESP32-C3 BLE
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SKETCH: server
+      SKETCH: bletest
 
     steps:
       - name: Checkout repo

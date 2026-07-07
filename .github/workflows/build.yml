@@ -1,4 +1,4 @@
-name: Build ESP32-C3 BLE
+name: Build ESP32-C3 weblab
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SKETCH: bletest
+      SKETCH: weblab
 
     steps:
       - name: Checkout repo
@@ -46,5 +46,5 @@ jobs:
       - name: Upload firmware files
         uses: actions/upload-artifact@v4
         with:
-          name: esp32c3-mochi-firmware
+          name: esp32c3weblab
           path: build/*

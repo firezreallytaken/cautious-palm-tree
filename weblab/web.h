@@ -5,10 +5,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32-C3 Web Lab v2</title>
+  <title>ESP32-C3 Web Lab v3</title>
   <style>
     * { box-sizing: border-box; }
-
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -16,27 +15,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       color: white;
       padding: 18px;
     }
-
-    .wrap {
-      max-width: 760px;
-      margin: 0 auto;
-    }
-
-    h1 {
-      margin: 8px 0 4px;
-      font-size: 30px;
-    }
-
-    .sub {
-      color: #aaa;
-      margin-bottom: 18px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 12px;
-    }
-
+    .wrap { max-width: 780px; margin: 0 auto; }
+    h1 { margin: 8px 0 4px; font-size: 30px; }
+    .sub { color: #aaa; margin-bottom: 18px; }
+    .grid { display: grid; gap: 12px; }
     .card {
       background: #1a1a1f;
       border: 1px solid #333;
@@ -44,13 +26,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       padding: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
-
-    .title {
-      font-weight: 900;
-      margin-bottom: 10px;
-      font-size: 18px;
-    }
-
+    .title { font-weight: 900; margin-bottom: 10px; font-size: 18px; }
     .row {
       display: flex;
       justify-content: space-between;
@@ -58,23 +34,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       padding: 8px 0;
       border-bottom: 1px solid #2b2b31;
     }
-
     .row:last-child { border-bottom: 0; }
-
     .key { color: #aaa; }
-
-    .value {
-      text-align: right;
-      font-weight: 800;
-      overflow-wrap: anywhere;
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
+    .value { text-align: right; font-weight: 800; overflow-wrap: anywhere; }
+    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     button, input[type="submit"] {
       border: 0;
       border-radius: 16px;
@@ -84,23 +47,10 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       background: white;
       color: black;
     }
-
-    button.dark {
-      background: #2c2c34;
-      color: white;
-      border: 1px solid #444;
-    }
-
-    button.danger {
-      background: #ff4d4d;
-      color: black;
-    }
-
-    button:active {
-      transform: scale(0.97);
-    }
-
-    input, textarea {
+    button.dark { background: #2c2c34; color: white; border: 1px solid #444; }
+    button.danger { background: #ff4d4d; color: black; }
+    button:active { transform: scale(0.97); }
+    input, textarea, select {
       width: 100%;
       border: 1px solid #444;
       background: #111;
@@ -110,38 +60,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       font: inherit;
       margin: 6px 0 10px;
     }
-
     textarea {
       min-height: 190px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 13px;
     }
-
-    .app {
-      padding: 10px 0;
-      border-bottom: 1px solid #2b2b31;
-    }
-
-    .app:last-child { border-bottom: 0; }
-
-    .appname {
-      font-weight: 900;
-      overflow-wrap: anywhere;
-    }
-
-    .meta {
-      color: #aaa;
-      font-size: 13px;
-      margin-top: 3px;
-    }
-
-    .appactions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-
-    .appactions a, .appactions button {
+    .item { padding: 10px 0; border-bottom: 1px solid #2b2b31; }
+    .item:last-child { border-bottom: 0; }
+    .name { font-weight: 900; overflow-wrap: anywhere; }
+    .meta { color: #aaa; font-size: 13px; margin-top: 3px; }
+    .actions { display: flex; gap: 8px; margin-top: 8px; }
+    .actions a, .actions button {
       flex: 1;
       text-align: center;
       text-decoration: none;
@@ -150,29 +79,24 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       font-size: 13px;
       font-weight: 900;
     }
-
-    .appactions a {
-      background: white;
-      color: black;
-    }
-
-    code {
-      background: #25252b;
-      padding: 2px 6px;
-      border-radius: 8px;
-    }
-
-    .notice {
-      color: #aaa;
-      font-size: 13px;
-      line-height: 1.45;
+    .actions a { background: white; color: black; }
+    code { background: #25252b; padding: 2px 6px; border-radius: 8px; }
+    .notice { color: #aaa; font-size: 13px; line-height: 1.45; }
+    .morseBox {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 12px;
+      font-family: ui-monospace, monospace;
+      overflow-wrap: anywhere;
+      min-height: 44px;
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>ESP32-C3 Web Lab v2</h1>
-    <div class="sub">Tiny offline app launcher and control panel.</div>
+    <h1>ESP32-C3 Web Lab v3</h1>
+    <div class="sub">Offline mini apps, LED tools, Wi-Fi scan, and file storage.</div>
 
     <div class="grid">
       <div class="card">
@@ -199,9 +123,22 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
 
       <div class="card">
+        <div class="title">Morse Code LED</div>
+        <input id="morseText" value="SOS">
+        <select id="morseSpeed">
+          <option value="80">Fast</option>
+          <option value="120" selected>Normal</option>
+          <option value="200">Slow</option>
+        </select>
+        <div class="morseBox" id="morseOut">...</div>
+        <br>
+        <button onclick="playMorse()">Blink Morse on Blue LED</button>
+      </div>
+
+      <div class="card">
         <div class="title">Mini Apps</div>
         <div class="notice">
-          Upload a single-file HTML app, then open it from the ESP32 without rebuilding firmware.
+          Premade apps are created automatically. Uploaded HTML opens with <code>/app?name=file.html</code>.
         </div>
         <br>
         <input type="file" id="fileInput" accept=".html,.htm,.css,.js,.json,.txt">
@@ -288,7 +225,6 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         document.getElementById('storage').textContent =
           formatBytes(d.fs_used) + ' / ' + formatBytes(d.fs_total);
         document.getElementById('led').textContent = d.led;
-
         document.getElementById('wifiName').value = d.ssid;
       } catch (e) {
         document.getElementById('board').textContent = 'Disconnected';
@@ -300,30 +236,30 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       await loadStatus();
     }
 
-    async function loadFiles() {
+    async function loadApps() {
       const box = document.getElementById('apps');
 
       try {
-        const res = await fetch('/api/files');
-        const files = await res.json();
+        const res = await fetch('/api/apps');
+        const apps = await res.json();
 
-        if (!files.length) {
-          box.innerHTML = '<div class="notice">No mini apps yet.</div>';
+        if (!apps.length) {
+          box.innerHTML = '<div class="notice">No mini apps found.</div>';
           return;
         }
 
-        box.innerHTML = files.map(f => `
-          <div class="app">
-            <div class="appname">${escapeHtml(f.name)}</div>
-            <div class="meta">${formatBytes(f.size)} · ${escapeHtml(f.path)}</div>
-            <div class="appactions">
-              <a href="${escapeHtml(f.url)}" target="_blank">Open</a>
-              <button class="danger" onclick="deleteFile('${escapeHtml(f.path)}')">Delete</button>
+        box.innerHTML = apps.map(app => `
+          <div class="item">
+            <div class="name">${escapeHtml(app.name)}</div>
+            <div class="meta">${formatBytes(app.size)} · ${escapeHtml(app.url)}</div>
+            <div class="actions">
+              <a href="${escapeHtml(app.url)}" target="_blank">Open</a>
+              <button class="danger" onclick="deleteApp('${escapeHtml(app.name)}')">Delete</button>
             </div>
           </div>
         `).join('');
       } catch (e) {
-        box.textContent = 'Failed to load files.';
+        box.textContent = 'Failed to load mini apps.';
       }
     }
 
@@ -345,7 +281,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const text = await res.text();
       console.log(text);
 
-      await loadFiles();
+      await loadApps();
       await loadStatus();
     }
 
@@ -353,12 +289,13 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const name = document.getElementById('newName').value;
       const content = document.getElementById('newContent').value;
 
-      const data = new FormData();
+      const data = new URLSearchParams();
       data.append('name', name);
       data.append('content', content);
 
       const res = await fetch('/api/save', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data
       });
 
@@ -370,20 +307,45 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         alert('Save failed.');
       }
 
-      await loadFiles();
+      await loadApps();
       await loadStatus();
     }
 
-    async function deleteFile(path) {
-      if (!confirm('Delete ' + path + '?')) return;
+    async function deleteApp(name) {
+      if (!confirm('Delete ' + name + '?')) return;
 
-      const res = await fetch('/api/delete?path=' + encodeURIComponent(path), {
-        method: 'POST'
+      const data = new URLSearchParams();
+      data.append('name', name);
+
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data
       });
 
-      console.log(await res.text());
+      await loadApps();
+      await loadStatus();
+    }
 
-      await loadFiles();
+    async function updateMorsePreview() {
+      const text = document.getElementById('morseText').value;
+
+      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text));
+      const d = await res.json();
+
+      document.getElementById('morseOut').textContent = d.morse || '(nothing)';
+    }
+
+    async function playMorse() {
+      const text = document.getElementById('morseText').value;
+      const unit = document.getElementById('morseSpeed').value;
+
+      document.getElementById('morseOut').textContent = 'Playing...';
+
+      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit);
+      const d = await res.json();
+
+      document.getElementById('morseOut').textContent = d.morse || '(nothing)';
       await loadStatus();
     }
 
@@ -391,17 +353,17 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const ssid = document.getElementById('wifiName').value;
       const pass = document.getElementById('wifiPass').value;
 
-      const data = new FormData();
+      const data = new URLSearchParams();
       data.append('ssid', ssid);
       data.append('pass', pass);
 
       const res = await fetch('/api/settings', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data
       });
 
-      const text = await res.text();
-      alert(text);
+      alert(await res.text());
     }
 
     async function scanWifi() {
@@ -418,8 +380,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         box.innerHTML = list.map(w => `
-          <div class="app">
-            <div class="appname">${escapeHtml(w.ssid || '(hidden network)')}</div>
+          <div class="item">
+            <div class="name">${escapeHtml(w.ssid || '(hidden network)')}</div>
             <div class="meta">RSSI ${w.rssi} dBm · Channel ${w.channel} · ${w.secure ? 'Secured' : 'Open'}</div>
           </div>
         `).join('');
@@ -437,9 +399,142 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         '</div>';
     }
 
+    document.getElementById('morseText').addEventListener('input', updateMorsePreview);
+
     loadStatus();
-    loadFiles();
+    loadApps();
+    updateMorsePreview();
     setInterval(loadStatus, 3000);
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morse LED</title>
+  <style>
+    body { font-family: system-ui; background: #111; color: white; padding: 24px; }
+    input, select, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 0; font: inherit; }
+    button { font-weight: 900; }
+    pre { background: #222; padding: 16px; border-radius: 14px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Morse LED</h1>
+  <p>Type text and blink it using the ESP32-C3 blue LED.</p>
+
+  <input id="text" value="SOS">
+  <select id="unit">
+    <option value="80">Fast</option>
+    <option value="120" selected>Normal</option>
+    <option value="200">Slow</option>
+  </select>
+
+  <button onclick="encode()">Preview</button>
+  <button onclick="play()">Blink LED</button>
+
+  <pre id="out">...</pre>
+
+  <script>
+    async function encode() {
+      const text = document.getElementById('text').value;
+      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text));
+      const d = await res.json();
+      document.getElementById('out').textContent = d.morse || '(nothing)';
+    }
+
+    async function play() {
+      const text = document.getElementById('text').value;
+      const unit = document.getElementById('unit').value;
+
+      document.getElementById('out').textContent = 'Playing...';
+
+      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit);
+      const d = await res.json();
+
+      document.getElementById('out').textContent = d.morse || '(nothing)';
+    }
+
+    encode();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_CLOCK_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Offline Clock</title>
+  <style>
+    body { font-family: system-ui; background: #111; color: white; padding: 24px; text-align: center; }
+    .clock { font-size: 48px; font-weight: 900; margin-top: 40px; }
+    .date { color: #aaa; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <h1>Offline Clock</h1>
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="date" id="date">...</div>
+
+  <script>
+    function tick() {
+      const d = new Date();
+      document.getElementById('clock').textContent = d.toLocaleTimeString();
+      document.getElementById('date').textContent = d.toLocaleDateString();
+    }
+
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Terminal</title>
+  <style>
+    body { font-family: system-ui; background: #111; color: white; padding: 24px; }
+    button { padding: 14px; border-radius: 14px; border: 0; margin: 5px; font-weight: 900; }
+    pre { background: #222; padding: 16px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>API Terminal</h1>
+
+  <button onclick="call('/api/status')">Status</button>
+  <button onclick="call('/api/led/toggle')">Toggle LED</button>
+  <button onclick="call('/api/blink?times=3')">Blink</button>
+  <button onclick="call('/api/scan')">Scan Wi-Fi</button>
+
+  <pre id="out">Ready.</pre>
+
+  <script>
+    async function call(path) {
+      document.getElementById('out').textContent = 'Loading ' + path + '...';
+
+      try {
+        const res = await fetch(path);
+        const text = await res.text();
+
+        try {
+          document.getElementById('out').textContent = JSON.stringify(JSON.parse(text), null, 2);
+        } catch {
+          document.getElementById('out').textContent = text;
+        }
+      } catch (e) {
+        document.getElementById('out').textContent = 'Failed: ' + e;
+      }
+    }
   </script>
 </body>
 </html>

@@ -6,6 +6,9 @@
 
 #define LED_PIN 8
 
+const size_t MAX_SAVE_CHARS = 20000;
+const size_t MAX_UPLOAD_BYTES = 65536;
+
 WebServer server(80);
 Preferences prefs;
 
@@ -17,6 +20,8 @@ String apPass = "12345678";
 
 File uploadFile;
 String lastUploadName = "";
+bool uploadOk = true;
+size_t uploadBytes = 0;
 
 void noCache() {
   server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
@@ -113,10 +118,17 @@ String contentType(String path) {
   return "application/octet-stream";
 }
 
+String fileKind(String name) {
+  if (name.endsWith(".html") || name.endsWith(".htm")) return "applet";
+  if (name.endsWith(".txt")) return "text";
+  if (name.endsWith(".json")) return "json";
+  if (name.endsWith(".css")) return "css";
+  if (name.endsWith(".js")) return "script";
+  return "file";
+}
+
 void setLed(bool on) {
   ledOn = on;
-
-  // ESP32-C3 Super Mini blue LED is usually active-low.
   digitalWrite(LED_PIN, ledOn ? LOW : HIGH);
 }
 
@@ -160,10 +172,14 @@ void seedPresetApps() {
     LittleFS.mkdir("/apps");
   }
 
+  writePreset("calculator.html", PRESET_CALCULATOR_HTML);
+  writePreset("notes.html", PRESET_NOTES_HTML);
+  writePreset("pixel.html", PRESET_PIXEL_HTML);
+  writePreset("dice.html", PRESET_DICE_HTML);
+  writePreset("timer.html", PRESET_TIMER_HTML);
   writePreset("morse.html", PRESET_MORSE_HTML);
   writePreset("clock.html", PRESET_CLOCK_HTML);
   writePreset("terminal.html", PRESET_TERMINAL_HTML);
-  writePreset("calculator.html", PRESET_CALCULATOR_HTML);
 }
 
 void handleRoot() {
@@ -188,6 +204,8 @@ void handleStatus() {
   json += "\"flash_size\":" + String(ESP.getFlashChipSize()) + ",";
   json += "\"fs_total\":" + String(LittleFS.totalBytes()) + ",";
   json += "\"fs_used\":" + String(LittleFS.usedBytes()) + ",";
+  json += "\"max_save_chars\":" + String(MAX_SAVE_CHARS) + ",";
+  json += "\"max_upload_bytes\":" + String(MAX_UPLOAD_BYTES) + ",";
   json += "\"led\":\"" + ledText() + "\"";
   json += "}";
 
@@ -356,7 +374,6 @@ void handleMorsePlay() {
   int unitMs = server.hasArg("unit") ? server.arg("unit").toInt() : 120;
 
   String code = encodeMorse(text);
-
   playMorse(text, unitMs);
 
   String json = "{";
@@ -418,6 +435,7 @@ void handleApps() {
 
           json += "{";
           json += "\"name\":\"" + jsonEscape(name) + "\",";
+          json += "\"kind\":\"" + fileKind(name) + "\",";
           json += "\"path\":\"/apps/" + jsonEscape(name) + "\",";
           json += "\"url\":\"" + jsonEscape(appUrl(name)) + "\",";
           json += "\"size\":" + String(file.size());
@@ -441,6 +459,13 @@ void handleSave() {
     return;
   }
 
+  String content = server.arg("content");
+
+  if (content.length() > MAX_SAVE_CHARS) {
+    server.send(413, "application/json; charset=utf-8", "{\"error\":\"content too large\"}");
+    return;
+  }
+
   String name = safeName(server.arg("name"));
   String path = appPath(name);
 
@@ -450,7 +475,7 @@ void handleSave() {
     return;
   }
 
-  f.print(server.arg("content"));
+  f.print(content);
   f.close();
 
   String json = "{";
@@ -485,6 +510,11 @@ void handleDelete() {
 void handleUploadFinish() {
   noCache();
 
+  if (!uploadOk) {
+    server.send(413, "application/json; charset=utf-8", "{\"error\":\"upload too large\"}");
+    return;
+  }
+
   if (lastUploadName.length() == 0) {
     server.send(400, "application/json; charset=utf-8", "{\"error\":\"no file uploaded\"}");
     return;
@@ -504,6 +534,9 @@ void handleUploadData() {
 
   if (upload.status == UPLOAD_FILE_START) {
     lastUploadName = safeName(upload.filename);
+    uploadOk = true;
+    uploadBytes = 0;
+
     String path = appPath(lastUploadName);
 
     if (LittleFS.exists(path)) {
@@ -514,6 +547,21 @@ void handleUploadData() {
   }
 
   else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (!uploadOk) return;
+
+    uploadBytes += upload.currentSize;
+
+    if (uploadBytes > MAX_UPLOAD_BYTES) {
+      uploadOk = false;
+
+      if (uploadFile) {
+        uploadFile.close();
+      }
+
+      LittleFS.remove(appPath(lastUploadName));
+      return;
+    }
+
     if (uploadFile) {
       uploadFile.write(upload.buf, upload.currentSize);
     }
@@ -647,7 +695,7 @@ void setup() {
   server.begin();
 
   Serial.println();
-  Serial.println("ESP32-C3 Web Lab v4 started");
+  Serial.println("ESP32-C3 Web Lab v5 started");
   Serial.print("WiFi: ");
   Serial.println(apSsid);
   Serial.print("Password: ");

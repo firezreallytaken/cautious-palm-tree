@@ -650,3 +650,515 @@ const char PRESET_CALCULATOR_HTML[] PROGMEM = R"rawliteral(
 </body>
 </html>
 )rawliteral";
+
+const char PRESET_NOTES_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Notes</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; background:#111; color:white; font-family:system-ui; padding:18px; }
+    .wrap { max-width:760px; margin:auto; }
+    .card { background:#1a1a1f; border:1px solid #333; border-radius:24px; padding:18px; margin-bottom:12px; }
+    h1 { margin-top:0; }
+    input, textarea, select, button {
+      width:100%; padding:13px; margin:6px 0; border-radius:14px; font:inherit;
+    }
+    input, textarea, select { background:#0b0b0d; color:white; border:1px solid #444; }
+    textarea { min-height:260px; font-family:ui-monospace, monospace; }
+    button { border:0; background:white; color:black; font-weight:900; }
+    .danger { background:#ff4d4d; color:black; }
+    .dark { background:#2c2c34; color:white; border:1px solid #444; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .note { padding:10px; border-bottom:1px solid #333; }
+    .note:last-child { border-bottom:0; }
+    .name { font-weight:900; }
+    .meta { color:#888; font-size:13px; }
+    .status { color:#aaa; font-size:13px; margin-top:8px; overflow-wrap:anywhere; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Notes</h1>
+      <p class="meta">Phone mode saves only on this browser. ESP32 mode saves shared notes into ESP32 storage.</p>
+
+      <select id="mode" onchange="loadAll()">
+        <option value="phone">Phone/browser storage</option>
+        <option value="esp">ESP32 storage</option>
+      </select>
+
+      <input id="title" placeholder="Note title">
+      <textarea id="body" placeholder="Write note..."></textarea>
+
+      <div class="grid">
+        <button onclick="saveNote()">Save Note</button>
+        <button class="dark" onclick="newNote()">New</button>
+      </div>
+      <button class="danger" onclick="deleteNote()">Delete Current Note</button>
+
+      <div class="status" id="status">Ready.</div>
+    </div>
+
+    <div class="card">
+      <h2>Saved Notes</h2>
+      <div id="list">Loading...</div>
+    </div>
+  </div>
+
+  <script>
+    const PHONE_KEY = "esp32_multi_notes_v1";
+    const ESP_FILE = "notes-data.json";
+    const MAX_BYTES = 16000;
+    let notes = [];
+    let currentId = null;
+
+    function id() { return String(Date.now()) + "-" + Math.floor(Math.random() * 9999); }
+    function status(s) { document.getElementById("status").textContent = s; }
+    function bytes(s) { return new TextEncoder().encode(s).length; }
+    function mode() { return document.getElementById("mode").value; }
+
+    async function loadAll() {
+      if (mode() === "phone") {
+        try { notes = JSON.parse(localStorage.getItem(PHONE_KEY) || "[]"); }
+        catch { notes = []; }
+        status("Loaded phone notes.");
+        render();
+        return;
+      }
+
+      try {
+        const res = await fetch("/app?name=" + encodeURIComponent(ESP_FILE) + "&t=" + Date.now());
+        if (!res.ok) {
+          notes = [];
+          status("No ESP32 notes yet.");
+        } else {
+          notes = JSON.parse(await res.text() || "[]");
+          status("Loaded ESP32 notes.");
+        }
+      } catch (e) {
+        notes = [];
+        status("Failed to load ESP32 notes: " + e);
+      }
+
+      render();
+    }
+
+    async function persist() {
+      const data = JSON.stringify(notes);
+
+      if (mode() === "phone") {
+        localStorage.setItem(PHONE_KEY, data);
+        return true;
+      }
+
+      if (bytes(data) > MAX_BYTES) {
+        status("Too much note data for safe ESP32 save. Limit: " + MAX_BYTES + " bytes.");
+        return false;
+      }
+
+      const form = new URLSearchParams();
+      form.append("name", ESP_FILE);
+      form.append("content", data);
+
+      const res = await fetch("/api/save?t=" + Date.now(), {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: form
+      });
+
+      return res.ok;
+    }
+
+    function render() {
+      const list = document.getElementById("list");
+
+      if (!notes.length) {
+        list.innerHTML = '<div class="meta">No notes yet.</div>';
+        return;
+      }
+
+      list.innerHTML = notes.map(n => `
+        <div class="note" onclick="openNote('${n.id}')">
+          <div class="name">${escapeHtml(n.title || "Untitled")}</div>
+          <div class="meta">${new Date(n.updated || n.created).toLocaleString()}</div>
+        </div>
+      `).join("");
+    }
+
+    function openNote(noteId) {
+      const n = notes.find(x => x.id === noteId);
+      if (!n) return;
+
+      currentId = n.id;
+      document.getElementById("title").value = n.title || "";
+      document.getElementById("body").value = n.body || "";
+      status("Opened note.");
+    }
+
+    async function saveNote() {
+      const title = document.getElementById("title").value.trim() || "Untitled";
+      const body = document.getElementById("body").value;
+
+      if (!currentId) currentId = id();
+
+      let n = notes.find(x => x.id === currentId);
+
+      if (!n) {
+        n = { id: currentId, created: Date.now() };
+        notes.unshift(n);
+      }
+
+      n.title = title;
+      n.body = body;
+      n.updated = Date.now();
+
+      const ok = await persist();
+
+      if (ok) {
+        status("Saved.");
+        render();
+      } else {
+        status("Save failed.");
+      }
+    }
+
+    function newNote() {
+      currentId = null;
+      document.getElementById("title").value = "";
+      document.getElementById("body").value = "";
+      status("New note.");
+    }
+
+    async function deleteNote() {
+      if (!currentId) return;
+      if (!confirm("Delete this note?")) return;
+
+      notes = notes.filter(x => x.id !== currentId);
+      currentId = null;
+      document.getElementById("title").value = "";
+      document.getElementById("body").value = "";
+
+      await persist();
+      render();
+      status("Deleted.");
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+      }[c]));
+    }
+
+    loadAll();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_PIXEL_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pixel Pad</title>
+  <style>
+    body { margin:0; background:#111; color:white; font-family:system-ui; padding:18px; }
+    .wrap { max-width:520px; margin:auto; }
+    .card { background:#1a1a1f; border:1px solid #333; border-radius:24px; padding:18px; }
+    h1 { margin-top:0; }
+    canvas { width:100%; image-rendering:pixelated; background:white; border-radius:14px; touch-action:none; }
+    input, button { width:100%; padding:13px; margin:6px 0; border-radius:14px; font:inherit; }
+    input { border:1px solid #444; background:#0b0b0d; color:white; }
+    button { border:0; background:white; color:black; font-weight:900; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .danger { background:#ff4d4d; color:black; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Pixel Pad</h1>
+      <canvas id="c" width="16" height="16"></canvas>
+      <input id="color" type="color" value="#000000">
+      <div class="grid">
+        <button onclick="save()">Save</button>
+        <button onclick="load()">Load</button>
+      </div>
+      <button class="danger" onclick="clearCanvas()">Clear</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("c");
+    const ctx = canvas.getContext("2d");
+    const color = document.getElementById("color");
+    let drawing = false;
+
+    function init() {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 16, 16);
+    }
+
+    function point(e) {
+      const r = canvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - r.left) / r.width * 16);
+      const y = Math.floor((e.clientY - r.top) / r.height * 16);
+      return { x, y };
+    }
+
+    function draw(e) {
+      const p = point(e);
+      ctx.fillStyle = color.value;
+      ctx.fillRect(p.x, p.y, 1, 1);
+    }
+
+    canvas.addEventListener("pointerdown", e => { drawing = true; draw(e); });
+    canvas.addEventListener("pointermove", e => { if (drawing) draw(e); });
+    canvas.addEventListener("pointerup", () => drawing = false);
+    canvas.addEventListener("pointerleave", () => drawing = false);
+
+    function save() {
+      localStorage.setItem("esp32_pixel_pad", canvas.toDataURL());
+      fetch("/api/blink?times=1&t=" + Date.now());
+    }
+
+    function load() {
+      const data = localStorage.getItem("esp32_pixel_pad");
+      if (!data) return;
+      const img = new Image();
+      img.onload = () => ctx.drawImage(img, 0, 0, 16, 16);
+      img.src = data;
+    }
+
+    function clearCanvas() {
+      if (!confirm("Clear drawing?")) return;
+      init();
+    }
+
+    init();
+    load();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_DICE_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dice</title>
+  <style>
+    body { margin:0; min-height:100vh; background:#111; color:white; font-family:system-ui; display:grid; place-items:center; padding:20px; }
+    .card { width:min(100%,420px); background:#1b1b20; border:1px solid #333; border-radius:24px; padding:22px; text-align:center; }
+    .dice { font-size:90px; font-weight:900; margin:20px 0; }
+    button, select { width:100%; padding:16px; border:0; border-radius:16px; font-size:18px; font-weight:900; margin-top:10px; }
+    select { background:#111; color:white; border:1px solid #444; }
+    button { background:white; color:black; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Dice</h1>
+    <select id="sides">
+      <option value="6">D6</option>
+      <option value="10">D10</option>
+      <option value="20">D20</option>
+      <option value="100">D100</option>
+    </select>
+    <div class="dice" id="result">?</div>
+    <button onclick="roll()">Roll</button>
+    <button onclick="fetch('/api/blink?times=2&t='+Date.now())">Blink ESP LED</button>
+  </div>
+  <script>
+    function roll() {
+      const sides = Number(document.getElementById("sides").value);
+      document.getElementById("result").textContent = Math.floor(Math.random() * sides) + 1;
+    }
+    roll();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_TIMER_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Timer</title>
+  <style>
+    body { margin:0; min-height:100vh; background:#0d0d0f; color:white; font-family:system-ui; display:grid; place-items:center; padding:20px; }
+    .card { width:min(100%,430px); background:#1a1a1f; border:1px solid #333; border-radius:24px; padding:22px; text-align:center; }
+    .time { font-size:64px; font-weight:900; margin:20px 0; font-variant-numeric:tabular-nums; }
+    input, button { width:100%; padding:15px; margin-top:10px; border-radius:16px; border:0; font-size:18px; font-weight:900; }
+    input { background:#111; color:white; border:1px solid #444; }
+    button { background:white; color:black; }
+    .danger { background:#ff4d4d; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Timer</h1>
+    <input id="minutes" type="number" value="1" min="0" placeholder="Minutes">
+    <input id="seconds" type="number" value="0" min="0" max="59" placeholder="Seconds">
+    <div class="time" id="display">01:00</div>
+    <button onclick="startTimer()">Start</button>
+    <button onclick="pauseTimer()">Pause</button>
+    <button class="danger" onclick="resetTimer()">Reset</button>
+  </div>
+  <script>
+    let left = 60, running = false, interval = null;
+    function format(sec) {
+      const m = Math.floor(sec / 60), s = sec % 60;
+      return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    }
+    function update() { document.getElementById("display").textContent = format(left); }
+    function readInputs() {
+      const m = Number(document.getElementById("minutes").value || 0);
+      const s = Number(document.getElementById("seconds").value || 0);
+      left = Math.max(1, m * 60 + s);
+      update();
+    }
+    function startTimer() {
+      if (running) return;
+      if (left <= 0) readInputs();
+      running = true;
+      interval = setInterval(() => {
+        left--; update();
+        if (left <= 0) {
+          clearInterval(interval);
+          running = false;
+          fetch("/api/blink?times=10&t=" + Date.now());
+        }
+      }, 1000);
+    }
+    function pauseTimer() { running = false; clearInterval(interval); }
+    function resetTimer() { pauseTimer(); readInputs(); }
+    document.getElementById("minutes").addEventListener("input", readInputs);
+    document.getElementById("seconds").addEventListener("input", readInputs);
+    readInputs();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morse LED</title>
+  <style>
+    body { font-family:system-ui; background:#111; color:white; padding:24px; }
+    input, select, button { width:100%; padding:14px; margin:8px 0; border-radius:14px; border:0; font:inherit; }
+    button { font-weight:900; }
+    pre { background:#222; padding:16px; border-radius:14px; white-space:pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>Morse LED</h1>
+  <input id="text" value="SOS">
+  <select id="unit">
+    <option value="80">Fast</option>
+    <option value="120" selected>Normal</option>
+    <option value="200">Slow</option>
+  </select>
+  <button onclick="encode()">Preview</button>
+  <button onclick="play()">Blink LED</button>
+  <pre id="out">...</pre>
+  <script>
+    async function encode() {
+      const text = document.getElementById("text").value;
+      const res = await fetch("/api/morse/encode?text=" + encodeURIComponent(text) + "&t=" + Date.now());
+      const d = await res.json();
+      document.getElementById("out").textContent = d.morse || "(nothing)";
+    }
+    async function play() {
+      const text = document.getElementById("text").value;
+      const unit = document.getElementById("unit").value;
+      document.getElementById("out").textContent = "Playing...";
+      const res = await fetch("/api/morse/play?text=" + encodeURIComponent(text) + "&unit=" + unit + "&t=" + Date.now());
+      const d = await res.json();
+      document.getElementById("out").textContent = d.morse || "(nothing)";
+    }
+    encode();
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_CLOCK_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clock</title>
+  <style>
+    body { font-family:system-ui; background:#111; color:white; padding:24px; text-align:center; }
+    .clock { font-size:48px; font-weight:900; margin-top:40px; }
+    .date { color:#aaa; font-size:18px; }
+  </style>
+</head>
+<body>
+  <h1>Clock</h1>
+  <div class="clock" id="clock">--:--:--</div>
+  <div class="date" id="date">...</div>
+  <script>
+    function tick() {
+      const d = new Date();
+      document.getElementById("clock").textContent = d.toLocaleTimeString();
+      document.getElementById("date").textContent = d.toLocaleDateString();
+    }
+    tick();
+    setInterval(tick, 1000);
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API Terminal</title>
+  <style>
+    body { font-family:system-ui; background:#111; color:white; padding:24px; }
+    button { padding:14px; border-radius:14px; border:0; margin:5px; font-weight:900; }
+    pre { background:#222; padding:16px; border-radius:14px; white-space:pre-wrap; overflow-wrap:anywhere; }
+  </style>
+</head>
+<body>
+  <h1>API Terminal</h1>
+  <button onclick="call('/api/status')">Status</button>
+  <button onclick="call('/api/led/toggle')">Toggle LED</button>
+  <button onclick="call('/api/blink?times=3')">Blink</button>
+  <button onclick="call('/api/scan')">Scan Wi-Fi</button>
+  <pre id="out">Ready.</pre>
+  <script>
+    async function call(path) {
+      document.getElementById("out").textContent = "Loading " + path + "...";
+      try {
+        const res = await fetch(path + (path.includes("?") ? "&" : "?") + "t=" + Date.now());
+        const text = await res.text();
+        try { document.getElementById("out").textContent = JSON.stringify(JSON.parse(text), null, 2); }
+        catch { document.getElementById("out").textContent = text; }
+      } catch (e) {
+        document.getElementById("out").textContent = "Failed: " + e;
+      }
+    }
+  </script>
+</body>
+</html>
+)rawliteral";

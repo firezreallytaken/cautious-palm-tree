@@ -18,6 +18,12 @@ String apPass = "12345678";
 File uploadFile;
 String lastUploadName = "";
 
+void noCache() {
+  server.sendHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  server.sendHeader("Pragma", "no-cache");
+  server.sendHeader("Expires", "0");
+}
+
 String jsonEscape(String s) {
   s.replace("\\", "\\\\");
   s.replace("\"", "\\\"");
@@ -31,7 +37,7 @@ String urlEncode(String s) {
   const char *hex = "0123456789ABCDEF";
 
   for (int i = 0; i < s.length(); i++) {
-    char c = s[i];
+    unsigned char c = s[i];
 
     if (
       (c >= 'a' && c <= 'z') ||
@@ -39,7 +45,7 @@ String urlEncode(String s) {
       (c >= '0' && c <= '9') ||
       c == '-' || c == '_' || c == '.'
     ) {
-      out += c;
+      out += (char)c;
     } else {
       out += '%';
       out += hex[(c >> 4) & 0xF];
@@ -60,6 +66,7 @@ String safeName(String name) {
   if (slash >= 0) name = name.substring(slash + 1);
 
   String out = "";
+
   for (int i = 0; i < name.length(); i++) {
     char c = name[i];
 
@@ -97,11 +104,11 @@ String appUrl(String name) {
 }
 
 String contentType(String path) {
-  if (path.endsWith(".html") || path.endsWith(".htm")) return "text/html";
-  if (path.endsWith(".css")) return "text/css";
-  if (path.endsWith(".js")) return "application/javascript";
-  if (path.endsWith(".json")) return "application/json";
-  if (path.endsWith(".txt")) return "text/plain";
+  if (path.endsWith(".html") || path.endsWith(".htm")) return "text/html; charset=utf-8";
+  if (path.endsWith(".css")) return "text/css; charset=utf-8";
+  if (path.endsWith(".js")) return "application/javascript; charset=utf-8";
+  if (path.endsWith(".json")) return "application/json; charset=utf-8";
+  if (path.endsWith(".txt")) return "text/plain; charset=utf-8";
   if (path.endsWith(".svg")) return "image/svg+xml";
   return "application/octet-stream";
 }
@@ -109,7 +116,7 @@ String contentType(String path) {
 void setLed(bool on) {
   ledOn = on;
 
-  // ESP32-C3 Super Mini onboard blue LED is usually active-low.
+  // ESP32-C3 Super Mini blue LED is usually active-low.
   digitalWrite(LED_PIN, ledOn ? LOW : HIGH);
 }
 
@@ -156,13 +163,17 @@ void seedPresetApps() {
   writePreset("morse.html", PRESET_MORSE_HTML);
   writePreset("clock.html", PRESET_CLOCK_HTML);
   writePreset("terminal.html", PRESET_TERMINAL_HTML);
+  writePreset("calculator.html", PRESET_CALCULATOR_HTML);
 }
 
 void handleRoot() {
-  server.send_P(200, "text/html", INDEX_HTML);
+  noCache();
+  server.send_P(200, "text/html; charset=utf-8", INDEX_HTML);
 }
 
 void handleStatus() {
+  noCache();
+
   unsigned long uptime = (millis() - bootTime) / 1000;
 
   String json = "{";
@@ -180,25 +191,30 @@ void handleStatus() {
   json += "\"led\":\"" + ledText() + "\"";
   json += "}";
 
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleLedOn() {
+  noCache();
   setLed(true);
-  server.send(200, "application/json", "{\"led\":\"ON\"}");
+  server.send(200, "application/json; charset=utf-8", "{\"led\":\"ON\"}");
 }
 
 void handleLedOff() {
+  noCache();
   setLed(false);
-  server.send(200, "application/json", "{\"led\":\"OFF\"}");
+  server.send(200, "application/json; charset=utf-8", "{\"led\":\"OFF\"}");
 }
 
 void handleLedToggle() {
+  noCache();
   setLed(!ledOn);
-  server.send(200, "application/json", "{\"led\":\"" + ledText() + "\"}");
+  server.send(200, "application/json; charset=utf-8", "{\"led\":\"" + ledText() + "\"}");
 }
 
 void handleBlink() {
+  noCache();
+
   int times = server.hasArg("times") ? server.arg("times").toInt() : 3;
   if (times < 1) times = 1;
   if (times > 30) times = 30;
@@ -211,7 +227,7 @@ void handleBlink() {
   }
 
   setLed(ledOn);
-  server.send(200, "application/json", "{\"blink\":\"done\"}");
+  server.send(200, "application/json; charset=utf-8", "{\"blink\":\"done\"}");
 }
 
 String morseChar(char c) {
@@ -320,6 +336,8 @@ void playMorse(String text, int unitMs) {
 }
 
 void handleMorseEncode() {
+  noCache();
+
   String text = server.hasArg("text") ? server.arg("text") : "SOS";
   String code = encodeMorse(text);
 
@@ -328,10 +346,12 @@ void handleMorseEncode() {
   json += "\"morse\":\"" + jsonEscape(code) + "\"";
   json += "}";
 
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleMorsePlay() {
+  noCache();
+
   String text = server.hasArg("text") ? server.arg("text") : "SOS";
   int unitMs = server.hasArg("unit") ? server.arg("unit").toInt() : 120;
 
@@ -346,13 +366,16 @@ void handleMorsePlay() {
   json += "\"unit\":" + String(unitMs);
   json += "}";
 
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleScan() {
+  noCache();
+
   int n = WiFi.scanNetworks();
 
   String json = "[";
+
   for (int i = 0; i < n; i++) {
     if (i > 0) json += ",";
 
@@ -363,13 +386,16 @@ void handleScan() {
     json += "\"secure\":" + String(WiFi.encryptionType(i) == WIFI_AUTH_OPEN ? "false" : "true");
     json += "}";
   }
+
   json += "]";
 
   WiFi.scanDelete();
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleApps() {
+  noCache();
+
   File root = LittleFS.open("/apps");
 
   String json = "[";
@@ -404,12 +430,14 @@ void handleApps() {
   }
 
   json += "]";
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleSave() {
+  noCache();
+
   if (!server.hasArg("name") || !server.hasArg("content")) {
-    server.send(400, "application/json", "{\"error\":\"missing name or content\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"missing name or content\"}");
     return;
   }
 
@@ -418,7 +446,7 @@ void handleSave() {
 
   File f = LittleFS.open(path, "w");
   if (!f) {
-    server.send(500, "application/json", "{\"error\":\"cannot write file\"}");
+    server.send(500, "application/json; charset=utf-8", "{\"error\":\"cannot write file\"}");
     return;
   }
 
@@ -431,12 +459,14 @@ void handleSave() {
   json += "\"url\":\"" + jsonEscape(appUrl(name)) + "\"";
   json += "}";
 
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleDelete() {
+  noCache();
+
   if (!server.hasArg("name")) {
-    server.send(400, "application/json", "{\"error\":\"missing name\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"missing name\"}");
     return;
   }
 
@@ -444,17 +474,19 @@ void handleDelete() {
   String path = appPath(name);
 
   if (!LittleFS.exists(path)) {
-    server.send(404, "application/json", "{\"error\":\"file not found\"}");
+    server.send(404, "application/json; charset=utf-8", "{\"error\":\"file not found\"}");
     return;
   }
 
   LittleFS.remove(path);
-  server.send(200, "application/json", "{\"deleted\":true}");
+  server.send(200, "application/json; charset=utf-8", "{\"deleted\":true}");
 }
 
 void handleUploadFinish() {
+  noCache();
+
   if (lastUploadName.length() == 0) {
-    server.send(400, "application/json", "{\"error\":\"no file uploaded\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"no file uploaded\"}");
     return;
   }
 
@@ -464,7 +496,7 @@ void handleUploadFinish() {
   json += "\"url\":\"" + jsonEscape(appUrl(lastUploadName)) + "\"";
   json += "}";
 
-  server.send(200, "application/json", json);
+  server.send(200, "application/json; charset=utf-8", json);
 }
 
 void handleUploadData() {
@@ -495,8 +527,10 @@ void handleUploadData() {
 }
 
 void handleAppOpen() {
+  noCache();
+
   if (!server.hasArg("name")) {
-    server.send(400, "text/plain", "Missing app name");
+    server.send(400, "text/plain; charset=utf-8", "Missing app name");
     return;
   }
 
@@ -504,7 +538,7 @@ void handleAppOpen() {
   String path = appPath(name);
 
   if (!LittleFS.exists(path)) {
-    server.send(404, "text/plain", "Mini app not found: " + name);
+    server.send(404, "text/plain; charset=utf-8", "Mini app not found: " + name);
     return;
   }
 
@@ -514,8 +548,10 @@ void handleAppOpen() {
 }
 
 void handleSettings() {
+  noCache();
+
   if (!server.hasArg("ssid") || !server.hasArg("pass")) {
-    server.send(400, "application/json", "{\"error\":\"missing ssid or pass\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"missing ssid or pass\"}");
     return;
   }
 
@@ -526,34 +562,37 @@ void handleSettings() {
   pass.trim();
 
   if (ssid.length() < 1 || ssid.length() > 32) {
-    server.send(400, "application/json", "{\"error\":\"ssid must be 1-32 characters\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"ssid must be 1-32 characters\"}");
     return;
   }
 
   if (pass.length() > 0 && pass.length() < 8) {
-    server.send(400, "application/json", "{\"error\":\"password must be empty or 8+ characters\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"password must be empty or 8+ characters\"}");
     return;
   }
 
   if (pass.length() > 63) {
-    server.send(400, "application/json", "{\"error\":\"password too long\"}");
+    server.send(400, "application/json; charset=utf-8", "{\"error\":\"password too long\"}");
     return;
   }
 
   prefs.putString("ssid", ssid);
   prefs.putString("pass", pass);
 
-  server.send(200, "application/json", "{\"saved\":true,\"reboot_required\":true}");
+  server.send(200, "application/json; charset=utf-8", "{\"saved\":true,\"reboot_required\":true}");
 }
 
 void handleReboot() {
-  server.send(200, "text/plain", "Rebooting...");
+  noCache();
+
+  server.send(200, "text/plain; charset=utf-8", "Rebooting...");
   delay(500);
   ESP.restart();
 }
 
 void handleNotFound() {
-  server.send(404, "text/plain", "404 Not Found");
+  noCache();
+  server.send(404, "text/plain; charset=utf-8", "404 Not Found");
 }
 
 void setup() {
@@ -573,7 +612,7 @@ void setup() {
 
   seedPresetApps();
 
-  WiFi.mode(WIFI_AP);
+  WiFi.mode(WIFI_AP_STA);
 
   if (apPass.length() >= 8) {
     WiFi.softAP(apSsid.c_str(), apPass.c_str());
@@ -608,7 +647,7 @@ void setup() {
   server.begin();
 
   Serial.println();
-  Serial.println("ESP32-C3 Web Lab v3 started");
+  Serial.println("ESP32-C3 Web Lab v4 started");
   Serial.print("WiFi: ");
   Serial.println(apSsid);
   Serial.print("Password: ");

@@ -6,39 +6,103 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32-C3 Web Lab v4</title>
+  <title>ESP32-C3 Web Lab v5</title>
   <style>
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0d0d0f;
+      background:
+        radial-gradient(circle at top left, rgba(124,255,155,0.12), transparent 30%),
+        radial-gradient(circle at top right, rgba(120,160,255,0.12), transparent 28%),
+        #0b0b0e;
       color: white;
       padding: 18px;
     }
-    .wrap { max-width: 780px; margin: 0 auto; }
-    h1 { margin: 8px 0 4px; font-size: 30px; }
-    .sub { color: #aaa; margin-bottom: 18px; }
-    .grid { display: grid; gap: 12px; }
-    .card {
-      background: #1a1a1f;
+
+    .wrap {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1c1c22, #101014);
       border: 1px solid #333;
-      border-radius: 22px;
+      border-radius: 28px;
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      letter-spacing: -1px;
+    }
+
+    .sub {
+      color: #aaa;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      background: #111116;
+      border: 1px solid #2e2e35;
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .stat .key {
+      color: #888;
+      font-size: 13px;
+    }
+
+    .stat .value {
+      font-weight: 900;
+      overflow-wrap: anywhere;
+      margin-top: 4px;
+    }
+
+    .card {
+      background: #18181d;
+      border: 1px solid #333;
+      border-radius: 24px;
       padding: 16px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
-    .title { font-weight: 900; margin-bottom: 10px; font-size: 18px; }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #2b2b31;
+
+    .title {
+      font-size: 20px;
+      font-weight: 950;
+      margin-bottom: 10px;
     }
-    .row:last-child { border-bottom: 0; }
-    .key { color: #aaa; }
-    .value { text-align: right; font-weight: 800; overflow-wrap: anywhere; }
-    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .notice {
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
     button, input[type="submit"] {
       border: 0;
       border-radius: 16px;
@@ -48,43 +112,117 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       background: white;
       color: black;
     }
-    button.dark { background: #2c2c34; color: white; border: 1px solid #444; }
-    button.danger { background: #ff4d4d; color: black; }
-    button:active { transform: scale(0.97); }
+
+    button.dark {
+      background: #2c2c34;
+      color: white;
+      border: 1px solid #444;
+    }
+
+    button.danger {
+      background: #ff4d4d;
+      color: black;
+    }
+
+    button:active, .appcard:active {
+      transform: scale(0.98);
+    }
+
     input, textarea, select {
       width: 100%;
       border: 1px solid #444;
-      background: #111;
+      background: #101014;
       color: white;
       border-radius: 14px;
       padding: 12px;
       font: inherit;
       margin: 6px 0 10px;
     }
+
     textarea {
       min-height: 190px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 13px;
     }
-    .item { padding: 10px 0; border-bottom: 1px solid #2b2b31; }
-    .item:last-child { border-bottom: 0; }
-    .name { font-weight: 900; overflow-wrap: anywhere; }
-    .meta { color: #aaa; font-size: 13px; margin-top: 3px; }
-    .actions { display: flex; gap: 8px; margin-top: 8px; }
-    .actions a, .actions button {
-      flex: 1;
-      text-align: center;
-      text-decoration: none;
-      border-radius: 12px;
-      padding: 10px;
-      font-size: 13px;
-      font-weight: 900;
+
+    .apps {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
     }
-    .actions a { background: white; color: black; }
-    code { background: #25252b; padding: 2px 6px; border-radius: 8px; }
-    .notice { color: #aaa; font-size: 13px; line-height: 1.45; }
+
+    .appcard {
+      background: linear-gradient(180deg, #24242b, #151519);
+      border: 1px solid #3a3a42;
+      border-radius: 22px;
+      padding: 14px;
+      text-decoration: none;
+      color: white;
+      min-height: 145px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .appicon {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      background: white;
+      color: black;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      font-weight: 950;
+      margin-bottom: 10px;
+    }
+
+    .appname {
+      font-weight: 950;
+      overflow-wrap: anywhere;
+      line-height: 1.1;
+    }
+
+    .appmeta {
+      color: #aaa;
+      font-size: 12px;
+      margin-top: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .fileRow {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid #303038;
+      padding: 10px 0;
+    }
+
+    .fileRow:first-child {
+      border-top: 0;
+    }
+
+    .fileName {
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .fileMeta {
+      color: #888;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+
+    .miniBtn {
+      padding: 10px 12px;
+      font-size: 13px;
+      border-radius: 12px;
+    }
+
     .morseBox {
-      background: #111;
+      background: #101014;
       border: 1px solid #333;
       border-radius: 14px;
       padding: 12px;
@@ -92,27 +230,49 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       overflow-wrap: anywhere;
       min-height: 44px;
     }
+
+    code {
+      background: #25252b;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    @media (max-width: 520px) {
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>ESP32-C3 Web Lab v4</h1>
-    <div class="sub">Offline mini apps, LED tools, Wi-Fi scan, and file storage.</div>
+    <div class="hero">
+      <h1>ESP32-C3 Web Lab</h1>
+      <div class="sub">Offline applet launcher, LED tools, Wi-Fi scan, and tiny storage.</div>
+
+      <div class="stats">
+        <div class="stat"><div class="key">Wi-Fi</div><div class="value" id="ssid">...</div></div>
+        <div class="stat"><div class="key">IP</div><div class="value" id="ip">...</div></div>
+        <div class="stat"><div class="key">Uptime</div><div class="value" id="uptime">...</div></div>
+        <div class="stat"><div class="key">Storage</div><div class="value" id="storage">...</div></div>
+        <div class="stat"><div class="key">Heap</div><div class="value" id="heap">...</div></div>
+        <div class="stat"><div class="key">LED</div><div class="value" id="led">...</div></div>
+      </div>
+    </div>
 
     <div class="grid">
       <div class="card">
-        <div class="title">Status</div>
-        <div class="row"><div class="key">Board</div><div class="value" id="board">...</div></div>
-        <div class="row"><div class="key">Wi-Fi Name</div><div class="value" id="ssid">...</div></div>
-        <div class="row"><div class="key">IP</div><div class="value" id="ip">...</div></div>
-        <div class="row"><div class="key">Uptime</div><div class="value" id="uptime">...</div></div>
-        <div class="row"><div class="key">Free heap</div><div class="value" id="heap">...</div></div>
-        <div class="row"><div class="key">Storage</div><div class="value" id="storage">...</div></div>
-        <div class="row"><div class="key">LED</div><div class="value" id="led">...</div></div>
+        <div class="title">Applets</div>
+        <div class="notice">HTML applets saved on the ESP32. Tap one to open it.</div>
+        <div class="apps" id="apps">Loading...</div>
       </div>
 
       <div class="card">
-        <div class="title">Controls</div>
+        <div class="title">Quick Controls</div>
         <div class="buttons">
           <button onclick="api('/api/led/on')">LED ON</button>
           <button onclick="api('/api/led/off')">LED OFF</button>
@@ -124,7 +284,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
 
       <div class="card">
-        <div class="title">Morse Code LED</div>
+        <div class="title">Morse LED</div>
         <input id="morseText" value="SOS">
         <select id="morseSpeed">
           <option value="80">Fast</option>
@@ -137,18 +297,14 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       </div>
 
       <div class="card">
-        <div class="title">Mini Apps</div>
-        <div class="notice">
-          Premade apps are created automatically. Uploaded HTML opens with <code>/app?name=file.html</code>.
-        </div>
-        <br>
+        <div class="title">Upload Applet</div>
+        <div class="notice">Upload small single-file HTML applets. Limit is shown in status API.</div>
         <input type="file" id="fileInput" accept=".html,.htm,.css,.js,.json,.txt">
         <button onclick="uploadFile()">Upload File</button>
-        <div id="apps" style="margin-top: 12px;">Loading...</div>
       </div>
 
       <div class="card">
-        <div class="title">Create Mini App</div>
+        <div class="title">Create Applet</div>
         <input id="newName" value="hello.html">
         <textarea id="newContent"><!DOCTYPE html>
 <html>
@@ -167,15 +323,18 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
   <button onclick="fetch('/api/led/toggle')">Toggle LED</button>
 </body>
 </html></textarea>
-        <button onclick="saveMiniApp()">Save Mini App</button>
+        <button onclick="saveMiniApp()">Save Applet</button>
+      </div>
+
+      <div class="card">
+        <div class="title">Stored Files</div>
+        <div class="notice">Text and JSON files saved by applets also appear here.</div>
+        <div id="files">Loading...</div>
       </div>
 
       <div class="card">
         <div class="title">Change ESP32 Wi-Fi</div>
-        <div class="notice">
-          After saving, press reboot. Your phone will disconnect and you must connect to the new Wi-Fi name.
-        </div>
-        <br>
+        <div class="notice">Use a stronger password than the default. After saving, reboot and reconnect.</div>
         <input id="wifiName" placeholder="Wi-Fi name">
         <input id="wifiPass" placeholder="Password, 8+ chars or empty">
         <button onclick="saveSettings()">Save Wi-Fi Settings</button>
@@ -206,12 +365,25 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#039;'
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
       }[c]));
+    }
+
+    function appIcon(name) {
+      name = name.toLowerCase();
+      if (name.includes('calc')) return 'C';
+      if (name.includes('note')) return 'N';
+      if (name.includes('pixel')) return 'P';
+      if (name.includes('dice')) return 'D';
+      if (name.includes('timer')) return 'T';
+      if (name.includes('morse')) return 'M';
+      if (name.includes('clock')) return 'K';
+      if (name.includes('terminal')) return '>';
+      return 'A';
+    }
+
+    function niceName(name) {
+      return name.replace(/\.(html|htm|txt|json|css|js)$/i, '').replace(/[-_]/g, ' ');
     }
 
     async function loadStatus() {
@@ -219,17 +391,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         const res = await fetch('/api/status?t=' + Date.now());
         const d = await res.json();
 
-        document.getElementById('board').textContent = d.board + ' / ' + d.chip_model;
         document.getElementById('ssid').textContent = d.ssid;
         document.getElementById('ip').textContent = d.ip;
         document.getElementById('uptime').textContent = formatTime(d.uptime);
+        document.getElementById('storage').textContent = formatBytes(d.fs_used) + ' / ' + formatBytes(d.fs_total);
         document.getElementById('heap').textContent = formatBytes(d.free_heap);
-        document.getElementById('storage').textContent =
-          formatBytes(d.fs_used) + ' / ' + formatBytes(d.fs_total);
         document.getElementById('led').textContent = d.led;
         document.getElementById('wifiName').value = d.ssid;
       } catch (e) {
-        document.getElementById('board').textContent = 'Disconnected';
+        document.getElementById('ssid').textContent = 'Disconnected';
       }
     }
 
@@ -239,29 +409,46 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     async function loadApps() {
-      const box = document.getElementById('apps');
-
       try {
         const res = await fetch('/api/apps?t=' + Date.now());
-        const apps = await res.json();
+        const list = await res.json();
 
-        if (!apps.length) {
-          box.innerHTML = '<div class="notice">No mini apps found.</div>';
-          return;
+        const applets = list.filter(x => x.kind === 'applet');
+        const files = list.filter(x => x.kind !== 'applet');
+
+        const appsBox = document.getElementById('apps');
+        if (!applets.length) {
+          appsBox.innerHTML = '<div class="notice">No applets found.</div>';
+        } else {
+          appsBox.innerHTML = applets.map(app => `
+            <a class="appcard" href="${escapeHtml(app.url)}&t=${Date.now()}" target="_blank">
+              <div>
+                <div class="appicon">${escapeHtml(appIcon(app.name))}</div>
+                <div class="appname">${escapeHtml(niceName(app.name))}</div>
+                <div class="appmeta">${formatBytes(app.size)} · ${escapeHtml(app.name)}</div>
+              </div>
+            </a>
+          `).join('');
         }
 
-        box.innerHTML = apps.map(app => `
-          <div class="item">
-            <div class="name">${escapeHtml(app.name)}</div>
-            <div class="meta">${formatBytes(app.size)} · ${escapeHtml(app.url)}</div>
-            <div class="actions">
-              <a href="${escapeHtml(app.url)}&t=${Date.now()}" target="_blank">Open</a>
-              <button class="danger" onclick="deleteApp('${escapeHtml(app.name)}')">Delete</button>
+        const filesBox = document.getElementById('files');
+        if (!files.length) {
+          filesBox.innerHTML = '<div class="notice">No extra stored files yet.</div>';
+        } else {
+          filesBox.innerHTML = files.map(file => `
+            <div class="fileRow">
+              <div>
+                <div class="fileName">${escapeHtml(file.name)}</div>
+                <div class="fileMeta">${escapeHtml(file.kind)} · ${formatBytes(file.size)}</div>
+              </div>
+              <div>
+                <button class="miniBtn danger" onclick="deleteApp('${escapeHtml(file.name)}')">Delete</button>
+              </div>
             </div>
-          </div>
-        `).join('');
+          `).join('');
+        }
       } catch (e) {
-        box.textContent = 'Failed to load mini apps.';
+        document.getElementById('apps').textContent = 'Failed to load applets.';
       }
     }
 
@@ -275,27 +462,20 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const data = new FormData();
       data.append('file', input.files[0]);
 
-      const res = await fetch('/api/upload?t=' + Date.now(), {
-        method: 'POST',
-        body: data
-      });
-
+      const res = await fetch('/api/upload?t=' + Date.now(), { method: 'POST', body: data });
       const text = await res.text();
-      console.log(text);
 
       input.value = '';
+      console.log(text);
 
       await loadApps();
       await loadStatus();
     }
 
     async function saveMiniApp() {
-      const name = document.getElementById('newName').value;
-      const content = document.getElementById('newContent').value;
-
       const data = new URLSearchParams();
-      data.append('name', name);
-      data.append('content', content);
+      data.append('name', document.getElementById('newName').value);
+      data.append('content', document.getElementById('newContent').value);
 
       const res = await fetch('/api/save?t=' + Date.now(), {
         method: 'POST',
@@ -303,14 +483,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         body: data
       });
 
-      const d = await res.json();
-
-      if (d.url) {
-        alert('Saved. Open: ' + d.url);
-      } else {
-        alert('Save failed.');
-      }
-
+      alert(await res.text());
       await loadApps();
       await loadStatus();
     }
@@ -333,10 +506,8 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     async function updateMorsePreview() {
       const text = document.getElementById('morseText').value;
-
       const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text) + '&t=' + Date.now());
       const d = await res.json();
-
       document.getElementById('morseOut').textContent = d.morse || '(nothing)';
     }
 
@@ -354,12 +525,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     async function saveSettings() {
-      const ssid = document.getElementById('wifiName').value;
-      const pass = document.getElementById('wifiPass').value;
-
       const data = new URLSearchParams();
-      data.append('ssid', ssid);
-      data.append('pass', pass);
+      data.append('ssid', document.getElementById('wifiName').value);
+      data.append('pass', document.getElementById('wifiPass').value);
 
       const res = await fetch('/api/settings?t=' + Date.now(), {
         method: 'POST',
@@ -384,9 +552,11 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         }
 
         box.innerHTML = list.map(w => `
-          <div class="item">
-            <div class="name">${escapeHtml(w.ssid || '(hidden network)')}</div>
-            <div class="meta">RSSI ${w.rssi} dBm · Channel ${w.channel} · ${w.secure ? 'Secured' : 'Open'}</div>
+          <div class="fileRow">
+            <div>
+              <div class="fileName">${escapeHtml(w.ssid || '(hidden network)')}</div>
+              <div class="fileMeta">RSSI ${w.rssi} dBm · Channel ${w.channel} · ${w.secure ? 'Secured' : 'Open'}</div>
+            </div>
           </div>
         `).join('');
       } catch (e) {
@@ -398,9 +568,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       fetch('/api/reboot?t=' + Date.now());
       document.body.innerHTML =
         '<div style="padding:24px;font-family:system-ui;color:white;background:#111;min-height:100vh">' +
-        '<h1>Rebooting...</h1>' +
-        '<p>Reconnect to the ESP32 Wi-Fi if it disappears.</p>' +
-        '</div>';
+        '<h1>Rebooting...</h1><p>Reconnect to the ESP32 Wi-Fi if it disappears.</p></div>';
     }
 
     document.getElementById('morseText').addEventListener('input', updateMorsePreview);
@@ -410,140 +578,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     updateMorsePreview();
 
     setInterval(loadStatus, 3000);
-    setInterval(loadApps, 5000);
-  </script>
-</body>
-</html>
-)rawliteral";
-
-const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Morse LED</title>
-  <style>
-    body { font-family: system-ui; background: #111; color: white; padding: 24px; }
-    input, select, button { width: 100%; padding: 14px; margin: 8px 0; border-radius: 14px; border: 0; font: inherit; }
-    button { font-weight: 900; }
-    pre { background: #222; padding: 16px; border-radius: 14px; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h1>Morse LED</h1>
-  <p>Type text and blink it using the ESP32-C3 blue LED.</p>
-
-  <input id="text" value="SOS">
-  <select id="unit">
-    <option value="80">Fast</option>
-    <option value="120" selected>Normal</option>
-    <option value="200">Slow</option>
-  </select>
-
-  <button onclick="encode()">Preview</button>
-  <button onclick="play()">Blink LED</button>
-
-  <pre id="out">...</pre>
-
-  <script>
-    async function encode() {
-      const text = document.getElementById('text').value;
-      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text) + '&t=' + Date.now());
-      const d = await res.json();
-      document.getElementById('out').textContent = d.morse || '(nothing)';
-    }
-
-    async function play() {
-      const text = document.getElementById('text').value;
-      const unit = document.getElementById('unit').value;
-
-      document.getElementById('out').textContent = 'Playing...';
-
-      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit + '&t=' + Date.now());
-      const d = await res.json();
-
-      document.getElementById('out').textContent = d.morse || '(nothing)';
-    }
-
-    encode();
-  </script>
-</body>
-</html>
-)rawliteral";
-
-const char PRESET_CLOCK_HTML[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Offline Clock</title>
-  <style>
-    body { font-family: system-ui; background: #111; color: white; padding: 24px; text-align: center; }
-    .clock { font-size: 48px; font-weight: 900; margin-top: 40px; }
-    .date { color: #aaa; font-size: 18px; }
-  </style>
-</head>
-<body>
-  <h1>Offline Clock</h1>
-  <div class="clock" id="clock">--:--:--</div>
-  <div class="date" id="date">...</div>
-
-  <script>
-    function tick() {
-      const d = new Date();
-      document.getElementById('clock').textContent = d.toLocaleTimeString();
-      document.getElementById('date').textContent = d.toLocaleDateString();
-    }
-
-    tick();
-    setInterval(tick, 1000);
-  </script>
-</body>
-</html>
-)rawliteral";
-
-const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>API Terminal</title>
-  <style>
-    body { font-family: system-ui; background: #111; color: white; padding: 24px; }
-    button { padding: 14px; border-radius: 14px; border: 0; margin: 5px; font-weight: 900; }
-    pre { background: #222; padding: 16px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
-  </style>
-</head>
-<body>
-  <h1>API Terminal</h1>
-
-  <button onclick="call('/api/status')">Status</button>
-  <button onclick="call('/api/led/toggle')">Toggle LED</button>
-  <button onclick="call('/api/blink?times=3')">Blink</button>
-  <button onclick="call('/api/scan')">Scan Wi-Fi</button>
-
-  <pre id="out">Ready.</pre>
-
-  <script>
-    async function call(path) {
-      document.getElementById('out').textContent = 'Loading ' + path + '...';
-
-      try {
-        const res = await fetch(path + (path.includes('?') ? '&' : '?') + 't=' + Date.now());
-        const text = await res.text();
-
-        try {
-          document.getElementById('out').textContent = JSON.stringify(JSON.parse(text), null, 2);
-        } catch {
-          document.getElementById('out').textContent = text;
-        }
-      } catch (e) {
-        document.getElementById('out').textContent = 'Failed: ' + e;
-      }
-    }
+    setInterval(loadApps, 6000);
   </script>
 </body>
 </html>
@@ -555,191 +590,61 @@ const char PRESET_CALCULATOR_HTML[] PROGMEM = R"rawliteral(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP Calculator</title>
+  <title>Calculator</title>
   <style>
     * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      background: #0d0d0f;
-      color: white;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      display: grid;
-      place-items: center;
-      padding: 18px;
-    }
-
-    .calc {
-      width: min(100%, 380px);
-      background: #1a1a1f;
-      border: 1px solid #333;
-      border-radius: 26px;
-      padding: 18px;
-      box-shadow: 0 16px 50px rgba(0,0,0,0.35);
-    }
-
+    body { margin: 0; min-height: 100vh; background: #0d0d0f; color: white; font-family: system-ui; display: grid; place-items: center; padding: 18px; }
+    .calc { width: min(100%, 380px); background: #1a1a1f; border: 1px solid #333; border-radius: 26px; padding: 18px; }
     h1 { margin: 0 0 12px; font-size: 22px; }
-
-    .screen {
-      background: #09090b;
-      border: 1px solid #333;
-      border-radius: 18px;
-      padding: 16px;
-      margin-bottom: 14px;
-      min-height: 92px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      overflow: hidden;
-    }
-
-    #expr {
-      color: #aaa;
-      font-size: 18px;
-      overflow-wrap: anywhere;
-      min-height: 24px;
-    }
-
-    #result {
-      font-size: 36px;
-      font-weight: 900;
-      text-align: right;
-      overflow-wrap: anywhere;
-    }
-
-    .keys {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-    }
-
-    button {
-      border: 0;
-      border-radius: 16px;
-      padding: 18px 8px;
-      font-size: 20px;
-      font-weight: 900;
-      background: #2c2c34;
-      color: white;
-    }
-
-    button:active { transform: scale(0.96); }
-
+    .screen { background: #09090b; border: 1px solid #333; border-radius: 18px; padding: 16px; margin-bottom: 14px; min-height: 92px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+    #expr { color: #aaa; font-size: 18px; overflow-wrap: anywhere; min-height: 24px; }
+    #result { font-size: 36px; font-weight: 900; text-align: right; overflow-wrap: anywhere; }
+    .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    button { border: 0; border-radius: 16px; padding: 18px 8px; font-size: 20px; font-weight: 900; background: #2c2c34; color: white; }
     .op { background: white; color: black; }
     .danger { background: #ff4d4d; color: black; }
     .equal { background: #7cff9b; color: black; }
     .wide { grid-column: span 2; }
-
-    .hint {
-      color: #777;
-      font-size: 12px;
-      text-align: center;
-      margin-top: 14px;
-    }
+    .hint { color: #777; font-size: 12px; text-align: center; margin-top: 14px; }
   </style>
 </head>
 <body>
   <div class="calc">
-    <h1>ESP Calculator</h1>
-
-    <div class="screen">
-      <div id="expr"></div>
-      <div id="result">0</div>
-    </div>
-
+    <h1>Calculator</h1>
+    <div class="screen"><div id="expr"></div><div id="result">0</div></div>
     <div class="keys">
-      <button class="danger" onclick="clearAll()">AC</button>
-      <button onclick="backspace()">Back</button>
-      <button onclick="press('%')">%</button>
-      <button class="op" onclick="press('/')">/</button>
-
-      <button onclick="press('7')">7</button>
-      <button onclick="press('8')">8</button>
-      <button onclick="press('9')">9</button>
-      <button class="op" onclick="press('*')">*</button>
-
-      <button onclick="press('4')">4</button>
-      <button onclick="press('5')">5</button>
-      <button onclick="press('6')">6</button>
-      <button class="op" onclick="press('-')">-</button>
-
-      <button onclick="press('1')">1</button>
-      <button onclick="press('2')">2</button>
-      <button onclick="press('3')">3</button>
-      <button class="op" onclick="press('+')">+</button>
-
-      <button class="wide" onclick="press('0')">0</button>
-      <button onclick="press('.')">.</button>
-      <button class="equal" onclick="calculate()">=</button>
+      <button class="danger" onclick="clearAll()">AC</button><button onclick="backspace()">Back</button><button onclick="press('%')">%</button><button class="op" onclick="press('/')">/</button>
+      <button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button><button class="op" onclick="press('*')">*</button>
+      <button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button><button class="op" onclick="press('-')">-</button>
+      <button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button><button class="op" onclick="press('+')">+</button>
+      <button class="wide" onclick="press('0')">0</button><button onclick="press('.')">.</button><button class="equal" onclick="calculate()">=</button>
     </div>
-
-    <div class="hint">Runs offline from ESP32-C3 Web Lab</div>
+    <div class="hint">Runs offline from ESP32-C3</div>
   </div>
-
   <script>
     let expr = "";
-
-    function update() {
-      document.getElementById("expr").textContent = expr;
-      document.getElementById("result").textContent = expr || "0";
-    }
-
+    function update() { document.getElementById("expr").textContent = expr; document.getElementById("result").textContent = expr || "0"; }
     function press(v) {
       const ops = "+-*/%";
       const last = expr.slice(-1);
-
-      if (ops.includes(v) && (expr === "" || ops.includes(last))) {
-        return;
-      }
-
-      expr += v;
-      update();
+      if (ops.includes(v) && (expr === "" || ops.includes(last))) return;
+      expr += v; update();
     }
-
-    function clearAll() {
-      expr = "";
-      update();
-    }
-
-    function backspace() {
-      expr = expr.slice(0, -1);
-      update();
-    }
-
+    function clearAll() { expr = ""; update(); }
+    function backspace() { expr = expr.slice(0, -1); update(); }
     function calculate() {
       try {
         if (!expr) return;
-
         const safe = expr.replace(/[^0-9+\-*/%.()]/g, "");
-
-        if (safe !== expr) {
-          throw new Error("bad input");
-        }
-
+        if (safe !== expr) throw new Error("bad input");
         let ans = Function('"use strict"; return (' + safe + ')')();
-
-        if (!Number.isFinite(ans)) {
-          throw new Error("bad math");
-        }
-
+        if (!Number.isFinite(ans)) throw new Error("bad math");
         ans = Math.round(ans * 1000000000) / 1000000000;
-
         document.getElementById("expr").textContent = expr + " =";
         document.getElementById("result").textContent = ans;
         expr = String(ans);
-      } catch {
-        document.getElementById("result").textContent = "Error";
-      }
+      } catch { document.getElementById("result").textContent = "Error"; }
     }
-
-    document.addEventListener("keydown", e => {
-      if ("0123456789+-*/.%".includes(e.key)) press(e.key);
-      if (e.key === "Enter") calculate();
-      if (e.key === "Backspace") backspace();
-      if (e.key === "Escape") clearAll();
-    });
-
     update();
   </script>
 </body>

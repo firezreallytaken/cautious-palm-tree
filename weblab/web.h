@@ -4,8 +4,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ESP32-C3 Web Lab v3</title>
+  <title>ESP32-C3 Web Lab v4</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -95,7 +96,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 </head>
 <body>
   <div class="wrap">
-    <h1>ESP32-C3 Web Lab v3</h1>
+    <h1>ESP32-C3 Web Lab v4</h1>
     <div class="sub">Offline mini apps, LED tools, Wi-Fi scan, and file storage.</div>
 
     <div class="grid">
@@ -152,6 +153,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
         <textarea id="newContent"><!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Hello ESP32</title>
   <style>
@@ -214,7 +216,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
     async function loadStatus() {
       try {
-        const res = await fetch('/api/status');
+        const res = await fetch('/api/status?t=' + Date.now());
         const d = await res.json();
 
         document.getElementById('board').textContent = d.board + ' / ' + d.chip_model;
@@ -232,7 +234,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     async function api(path) {
-      await fetch(path);
+      await fetch(path + (path.includes('?') ? '&' : '?') + 't=' + Date.now());
       await loadStatus();
     }
 
@@ -240,7 +242,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const box = document.getElementById('apps');
 
       try {
-        const res = await fetch('/api/apps');
+        const res = await fetch('/api/apps?t=' + Date.now());
         const apps = await res.json();
 
         if (!apps.length) {
@@ -253,7 +255,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
             <div class="name">${escapeHtml(app.name)}</div>
             <div class="meta">${formatBytes(app.size)} · ${escapeHtml(app.url)}</div>
             <div class="actions">
-              <a href="${escapeHtml(app.url)}" target="_blank">Open</a>
+              <a href="${escapeHtml(app.url)}&t=${Date.now()}" target="_blank">Open</a>
               <button class="danger" onclick="deleteApp('${escapeHtml(app.name)}')">Delete</button>
             </div>
           </div>
@@ -273,13 +275,15 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const data = new FormData();
       data.append('file', input.files[0]);
 
-      const res = await fetch('/api/upload', {
+      const res = await fetch('/api/upload?t=' + Date.now(), {
         method: 'POST',
         body: data
       });
 
       const text = await res.text();
       console.log(text);
+
+      input.value = '';
 
       await loadApps();
       await loadStatus();
@@ -293,7 +297,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       data.append('name', name);
       data.append('content', content);
 
-      const res = await fetch('/api/save', {
+      const res = await fetch('/api/save?t=' + Date.now(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data
@@ -317,7 +321,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       const data = new URLSearchParams();
       data.append('name', name);
 
-      await fetch('/api/delete', {
+      await fetch('/api/delete?t=' + Date.now(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data
@@ -330,7 +334,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     async function updateMorsePreview() {
       const text = document.getElementById('morseText').value;
 
-      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text));
+      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text) + '&t=' + Date.now());
       const d = await res.json();
 
       document.getElementById('morseOut').textContent = d.morse || '(nothing)';
@@ -342,7 +346,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
 
       document.getElementById('morseOut').textContent = 'Playing...';
 
-      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit);
+      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit + '&t=' + Date.now());
       const d = await res.json();
 
       document.getElementById('morseOut').textContent = d.morse || '(nothing)';
@@ -357,7 +361,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       data.append('ssid', ssid);
       data.append('pass', pass);
 
-      const res = await fetch('/api/settings', {
+      const res = await fetch('/api/settings?t=' + Date.now(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: data
@@ -371,7 +375,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
       box.textContent = 'Scanning... wait a few seconds';
 
       try {
-        const res = await fetch('/api/scan');
+        const res = await fetch('/api/scan?t=' + Date.now());
         const list = await res.json();
 
         if (!list.length) {
@@ -391,7 +395,7 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     }
 
     function reboot() {
-      fetch('/api/reboot');
+      fetch('/api/reboot?t=' + Date.now());
       document.body.innerHTML =
         '<div style="padding:24px;font-family:system-ui;color:white;background:#111;min-height:100vh">' +
         '<h1>Rebooting...</h1>' +
@@ -404,7 +408,9 @@ const char INDEX_HTML[] PROGMEM = R"rawliteral(
     loadStatus();
     loadApps();
     updateMorsePreview();
+
     setInterval(loadStatus, 3000);
+    setInterval(loadApps, 5000);
   </script>
 </body>
 </html>
@@ -414,6 +420,7 @@ const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Morse LED</title>
   <style>
@@ -442,7 +449,7 @@ const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
   <script>
     async function encode() {
       const text = document.getElementById('text').value;
-      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text));
+      const res = await fetch('/api/morse/encode?text=' + encodeURIComponent(text) + '&t=' + Date.now());
       const d = await res.json();
       document.getElementById('out').textContent = d.morse || '(nothing)';
     }
@@ -453,7 +460,7 @@ const char PRESET_MORSE_HTML[] PROGMEM = R"rawliteral(
 
       document.getElementById('out').textContent = 'Playing...';
 
-      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit);
+      const res = await fetch('/api/morse/play?text=' + encodeURIComponent(text) + '&unit=' + unit + '&t=' + Date.now());
       const d = await res.json();
 
       document.getElementById('out').textContent = d.morse || '(nothing)';
@@ -469,6 +476,7 @@ const char PRESET_CLOCK_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Offline Clock</title>
   <style>
@@ -500,6 +508,7 @@ const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>API Terminal</title>
   <style>
@@ -523,7 +532,7 @@ const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
       document.getElementById('out').textContent = 'Loading ' + path + '...';
 
       try {
-        const res = await fetch(path);
+        const res = await fetch(path + (path.includes('?') ? '&' : '?') + 't=' + Date.now());
         const text = await res.text();
 
         try {
@@ -535,6 +544,203 @@ const char PRESET_TERMINAL_HTML[] PROGMEM = R"rawliteral(
         document.getElementById('out').textContent = 'Failed: ' + e;
       }
     }
+  </script>
+</body>
+</html>
+)rawliteral";
+
+const char PRESET_CALCULATOR_HTML[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ESP Calculator</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0d0d0f;
+      color: white;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .calc {
+      width: min(100%, 380px);
+      background: #1a1a1f;
+      border: 1px solid #333;
+      border-radius: 26px;
+      padding: 18px;
+      box-shadow: 0 16px 50px rgba(0,0,0,0.35);
+    }
+
+    h1 { margin: 0 0 12px; font-size: 22px; }
+
+    .screen {
+      background: #09090b;
+      border: 1px solid #333;
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 14px;
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    #expr {
+      color: #aaa;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+      min-height: 24px;
+    }
+
+    #result {
+      font-size: 36px;
+      font-weight: 900;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 18px 8px;
+      font-size: 20px;
+      font-weight: 900;
+      background: #2c2c34;
+      color: white;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .op { background: white; color: black; }
+    .danger { background: #ff4d4d; color: black; }
+    .equal { background: #7cff9b; color: black; }
+    .wide { grid-column: span 2; }
+
+    .hint {
+      color: #777;
+      font-size: 12px;
+      text-align: center;
+      margin-top: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <h1>ESP Calculator</h1>
+
+    <div class="screen">
+      <div id="expr"></div>
+      <div id="result">0</div>
+    </div>
+
+    <div class="keys">
+      <button class="danger" onclick="clearAll()">AC</button>
+      <button onclick="backspace()">Back</button>
+      <button onclick="press('%')">%</button>
+      <button class="op" onclick="press('/')">/</button>
+
+      <button onclick="press('7')">7</button>
+      <button onclick="press('8')">8</button>
+      <button onclick="press('9')">9</button>
+      <button class="op" onclick="press('*')">*</button>
+
+      <button onclick="press('4')">4</button>
+      <button onclick="press('5')">5</button>
+      <button onclick="press('6')">6</button>
+      <button class="op" onclick="press('-')">-</button>
+
+      <button onclick="press('1')">1</button>
+      <button onclick="press('2')">2</button>
+      <button onclick="press('3')">3</button>
+      <button class="op" onclick="press('+')">+</button>
+
+      <button class="wide" onclick="press('0')">0</button>
+      <button onclick="press('.')">.</button>
+      <button class="equal" onclick="calculate()">=</button>
+    </div>
+
+    <div class="hint">Runs offline from ESP32-C3 Web Lab</div>
+  </div>
+
+  <script>
+    let expr = "";
+
+    function update() {
+      document.getElementById("expr").textContent = expr;
+      document.getElementById("result").textContent = expr || "0";
+    }
+
+    function press(v) {
+      const ops = "+-*/%";
+      const last = expr.slice(-1);
+
+      if (ops.includes(v) && (expr === "" || ops.includes(last))) {
+        return;
+      }
+
+      expr += v;
+      update();
+    }
+
+    function clearAll() {
+      expr = "";
+      update();
+    }
+
+    function backspace() {
+      expr = expr.slice(0, -1);
+      update();
+    }
+
+    function calculate() {
+      try {
+        if (!expr) return;
+
+        const safe = expr.replace(/[^0-9+\-*/%.()]/g, "");
+
+        if (safe !== expr) {
+          throw new Error("bad input");
+        }
+
+        let ans = Function('"use strict"; return (' + safe + ')')();
+
+        if (!Number.isFinite(ans)) {
+          throw new Error("bad math");
+        }
+
+        ans = Math.round(ans * 1000000000) / 1000000000;
+
+        document.getElementById("expr").textContent = expr + " =";
+        document.getElementById("result").textContent = ans;
+        expr = String(ans);
+      } catch {
+        document.getElementById("result").textContent = "Error";
+      }
+    }
+
+    document.addEventListener("keydown", e => {
+      if ("0123456789+-*/.%".includes(e.key)) press(e.key);
+      if (e.key === "Enter") calculate();
+      if (e.key === "Backspace") backspace();
+      if (e.key === "Escape") clearAll();
+    });
+
+    update();
   </script>
 </body>
 </html>
